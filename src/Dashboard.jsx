@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import VirtualCompanyWidget from './VirtualCompanyWidget.jsx'
 
 async function api(path, opts) {
   const res = await fetch(path, {
@@ -241,6 +242,10 @@ export default function Dashboard({ build }) {
             </div>
           </div>
           {weatherErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{weatherErr}</pre> : null}
+        </Widget>
+
+        <Widget title="Virtual company">
+          <VirtualCompanyWidget />
         </Widget>
 
         <Widget title="Brainstorm">
