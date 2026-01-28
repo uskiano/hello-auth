@@ -220,35 +220,56 @@ export default function Dashboard({ build }) {
           {usersErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{usersErr}</pre> : null}
         </Widget>
 
-        <Widget title="News feeds">
+        <Widget
+          title="News feeds"
+          right={<button className="btn" onClick={loadNews}>Refresh</button>}
+        >
           <div style={{ display: 'grid', gap: 10 }}>
-            {news.slice(0, 6).map((n) => (
-              <a key={n.link} href={n.link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ fontWeight: 650, lineHeight: 1.25 }}>{n.title}</div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{n.source || ''}</div>
+            {news.slice(0, 6).map((n, idx) => (
+              <a key={n.link} className="row" href={n.link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className={`dot ${idx % 2 === 0 ? 'orange' : 'blue'}`} />
+                  <div>
+                    <div style={{ fontWeight: 700, lineHeight: 1.15 }}>{n.title}</div>
+                    <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{n.source || 'News'}</div>
+                  </div>
+                </div>
+                <span className="pill blue">Read</span>
               </a>
             ))}
-          </div>
-          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={loadNews}>Refresh</button>
           </div>
           {newsErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{newsErr}</pre> : null}
         </Widget>
 
-        <Widget title="Weather">
+        <Widget
+          title="Weather"
+          right={<button className="btn" onClick={loadWeather}>Refresh</button>}
+        >
           <div style={{ display: 'grid', gap: 10 }}>
-            <div style={{ fontWeight: 650 }}>{place || 'Your location'}</div>
-            {weather ? (
-              <>
-                <div>Temp: {weather.tempC}°C</div>
-                <div>Wind: {weather.windKph} km/h</div>
-                <div style={{ color: '#666', fontSize: 12 }}>Updated: {weather.time}</div>
-              </>
-            ) : (
-              <div style={{ color: '#666' }}>Loading…</div>
-            )}
-            <div style={{ marginTop: 10 }}>
-              <button className="btn" onClick={loadWeather}>Refresh</button>
+            <div className="row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="dot green" />
+                <div>
+                  <div style={{ fontWeight: 750 }}>{place || 'Your location'}</div>
+                  <div className="muted" style={{ fontSize: 12 }}>{weather?.time ? `Updated: ${weather.time}` : 'Waiting for location…'}</div>
+                </div>
+              </div>
+              {weather ? <span className="pill green">{Math.round(weather.tempC)}°C</span> : <span className="pill blue">…</span>}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+              <div className="cardInner" style={{ padding: 14 }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Temperature</div>
+                <div className="kpi">
+                  <div className="kpiNum">{weather ? `${weather.tempC.toFixed(1)}°C` : '—'}</div>
+                </div>
+              </div>
+              <div className="cardInner" style={{ padding: 14 }}>
+                <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Wind</div>
+                <div className="kpi">
+                  <div className="kpiNum">{weather ? `${weather.windKph.toFixed(1)} km/h` : '—'}</div>
+                </div>
+              </div>
             </div>
           </div>
           {weatherErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{weatherErr}</pre> : null}
@@ -259,11 +280,17 @@ export default function Dashboard({ build }) {
         </Widget>
 
         <Widget title="Brainstorm">
-          <div style={{ display: 'grid', gap: 12 }}>
-            {ideas.map((i) => (
-              <div key={i.title}>
-                <div style={{ fontWeight: 700 }}>{i.title}</div>
-                <div style={{ color: '#444' }}>{i.desc}</div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {ideas.map((i, idx) => (
+              <div key={i.title} className="row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className={`dot ${idx % 3 === 0 ? 'purple' : idx % 3 === 1 ? 'blue' : 'green'}`} />
+                  <div>
+                    <div style={{ fontWeight: 800, lineHeight: 1.1 }}>{i.title}</div>
+                    <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>{i.desc}</div>
+                  </div>
+                </div>
+                <span className="pill green">Idea</span>
               </div>
             ))}
           </div>
