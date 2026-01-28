@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
 export default function VirtualCompanyWidget() {
   const mountRef = useRef(null)
@@ -10,23 +11,58 @@ export default function VirtualCompanyWidget() {
     if (!mount) return
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#0b1020')
+    // Daylight sky-ish background
+    scene.background = new THREE.Color('#bfe7ff')
 
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
-    camera.position.set(2.8, 1.8, 2.8)
+    camera.position.set(2.6, 1.7, 2.8)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.15
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
     mount.appendChild(renderer.domElement)
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.9)
-    scene.add(ambient)
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2)
-    dir.position.set(5, 8, 5)
-    scene.add(dir)
+    // IBL environment for more realistic daylight-ish reflections
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
 
-    const grid = new THREE.GridHelper(10, 10, 0x223355, 0x172033)
-    grid.position.y = -0.01
+    // "Sun" light
+    const sun = new THREE.DirectionalLight(0xffffff, 2.3)
+    sun.position.set(6, 10, 4)
+    sun.castShadow = true
+    sun.shadow.mapSize.width = 1024
+    sun.shadow.mapSize.height = 1024
+    sun.shadow.camera.near = 0.1
+    sun.shadow.camera.far = 30
+    sun.shadow.camera.left = -5
+    sun.shadow.camera.right = 5
+    sun.shadow.camera.top = 5
+    sun.shadow.camera.bottom = -5
+    scene.add(sun)
+
+    // Sky fill
+    const hemi = new THREE.HemisphereLight(0xdff3ff, 0xffffff, 0.9)
+    scene.add(hemi)
+
+    // Ground for shadows
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({ color: '#e9eef3', roughness: 0.95, metalness: 0.0 })
+    )
+    ground.rotation.x = -Math.PI / 2
+    ground.position.y = -0.001
+    ground.receiveShadow = true
+    scene.add(ground)
+
+    // Subtle grid (optional)
+    const grid = new THREE.GridHelper(20, 20, 0xaac4d4, 0xcfe2ee)
+    grid.position.y = 0
+    grid.material.opacity = 0.22
+    grid.material.transparent = true
     scene.add(grid)
 
     // Group that rotates (our "virtual company")
@@ -65,28 +101,43 @@ export default function VirtualCompanyWidget() {
       '/models/littlest_tokyo.glb',
       (gltf) => {
         model = gltf.scene
+
+        model.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true
+            obj.receiveShadow = true
+          }
+        })
+
         // Normalize scale
         const box = new THREE.Box3().setFromObject(model)
         const size = new THREE.Vector3()
         box.getSize(size)
         const maxAxis = Math.max(size.x, size.y, size.z)
-        const s = 1.8 / maxAxis
+        const s = 1.9 / maxAxis
         model.scale.setScalar(s)
 
-        // Center it
+        // Center it and lift slightly above ground
         box.setFromObject(model)
         const center = new THREE.Vector3()
         box.getCenter(center)
         model.position.sub(center)
+        model.position.y += 0.05
 
         company.add(model)
+
+        // Move logo above model top
+        const topY = (size.y * s) / 2
+        sprite.position.set(0, topY + 0.45, 0)
       },
       undefined,
       () => {
         // Fallback: simple building
         const geom = new THREE.BoxGeometry(1, 1.5, 1)
-        const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', roughness: 0.6, metalness: 0.1 })
+        const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', roughness: 0.45, metalness: 0.05 })
         model = new THREE.Mesh(geom, mat)
+        model.castShadow = true
+        model.receiveShadow = true
         model.position.y = 0.75
         company.add(model)
       }
@@ -102,7 +153,7 @@ export default function VirtualCompanyWidget() {
 
     let raf = 0
     function tick() {
-      company.rotation.y += 0.006
+      company.rotation.y += 0.0045
       renderer.render(scene, camera)
       raf = requestAnimationFrame(tick)
     }
@@ -115,6 +166,7 @@ export default function VirtualCompanyWidget() {
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
+      pmrem.dispose()
       renderer.dispose()
       spriteMat.dispose()
       logoTex.dispose()
