@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import Login from './Login.jsx'
+import Dashboard from './Dashboard.jsx'
 
 async function api(path, opts) {
   const res = await fetch(path, {
@@ -14,19 +17,16 @@ async function api(path, opts) {
   return res.text()
 }
 
-export default function App() {
+function AppInner() {
+  const navigate = useNavigate()
   const [me, setMe] = useState(null)
   const [build, setBuild] = useState('')
-  const [username, setUsername] = useState('juan')
-  const [password, setPassword] = useState('secret123')
-  const [err, setErr] = useState('')
 
-  async function refresh() {
+  async function refreshMe() {
     try {
       const data = await api('/api/me')
       setMe(data)
-      setErr('')
-    } catch (e) {
+    } catch {
       setMe(null)
     }
   }
@@ -35,66 +35,72 @@ export default function App() {
     try {
       const data = await api('/api/build')
       setBuild(data.build || '')
-    } catch (e) {
+    } catch {
       setBuild('')
     }
   }
 
   useEffect(() => {
-    refresh()
+    refreshMe()
     refreshBuild()
   }, [])
 
-  async function login(e) {
-    e.preventDefault()
-    setErr('')
-    try {
-      await api('/api/login', {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-      })
-      await refresh()
-    } catch (e) {
-      setErr(e.message)
-    }
+  async function logout() {
+    await api('/api/logout', { method: 'POST' })
+    await refreshMe()
+    navigate('/')
   }
 
-  async function logout() {
-    setErr('')
-    try {
-      await api('/api/logout', { method: 'POST' })
-      await refresh()
-    } catch (e) {
-      setErr(e.message)
-    }
-  }
+  const authed = !!me?.user
 
   return (
-    <div style={{ fontFamily: 'system-ui', padding: 24, maxWidth: 520 }}>
-      <h1>Hello Auth</h1>
+    <div>
+      <div style={{ padding: 12, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: 'system-ui' }}>{authed ? `Logged in: ${me.user}` : 'Not logged in'}</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {authed ? <button onClick={logout}>Log out</button> : null}
+          <a href="/dashboard">Dashboard</a>
+        </div>
+      </div>
 
-      {me?.user ? (
-        <>
-          <p style={{ fontSize: 18 }}>Hello {me.user}</p>
-          <button onClick={logout}>Log out</button>
-        </>
-      ) : (
-        <form onSubmit={login} style={{ display: 'grid', gap: 12 }}>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" />
-          <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password" type="password" />
-          <button type="submit">Log in</button>
-        </form>
-      )}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            authed ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Login
+                onLoggedIn={async () => {
+                  await refreshMe()
+                  navigate('/dashboard')
+                }}
+              />
+            )
+          }
+        />
 
-      {err ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap' }}>{err}</pre> : null}
+        <Route
+          path="/dashboard"
+          element={
+            authed ? (
+              <Dashboard build={build} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
-      <p style={{ marginTop: 24, color: '#666' }}>
-        Demo creds: juan / secret123
-      </p>
-
-      <p style={{ marginTop: 12, color: '#666' }}>
-        Build: {build || '…'}
-      </p>
+        <Route path="*" element={<Navigate to={authed ? '/dashboard' : '/'} replace />} />
+      </Routes>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppInner />
+    </BrowserRouter>
   )
 }
