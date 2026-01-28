@@ -14,8 +14,9 @@ export default function VirtualCompanyWidget() {
     // Daylight sky-ish background
     scene.background = new THREE.Color('#bfe7ff')
 
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
-    camera.position.set(2.6, 1.7, 2.8)
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 200)
+    camera.position.set(0, 1.6, 4.2)
+    camera.lookAt(0, 1.0, 0)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
@@ -67,6 +68,7 @@ export default function VirtualCompanyWidget() {
 
     // Group that rotates (our "virtual company")
     const company = new THREE.Group()
+    company.position.y = 1.0
     scene.add(company)
 
     // Logo sprite (canvas texture) floating above
@@ -117,18 +119,22 @@ export default function VirtualCompanyWidget() {
         const s = 1.9 / maxAxis
         model.scale.setScalar(s)
 
-        // Center it and lift slightly above ground
+        // Center it and put base on ground (y=0)
         box.setFromObject(model)
         const center = new THREE.Vector3()
         box.getCenter(center)
+        const min = new THREE.Vector3()
+        box.getMin(min)
+
         model.position.sub(center)
-        model.position.y += 0.05
+        // shift so lowest point sits on y=0
+        model.position.y -= min.y
 
         company.add(model)
 
         // Move logo above model top
-        const topY = (size.y * s) / 2
-        sprite.position.set(0, topY + 0.45, 0)
+        const topY = (size.y * s)
+        sprite.position.set(0, topY + 0.35, 0)
       },
       undefined,
       () => {
@@ -152,8 +158,32 @@ export default function VirtualCompanyWidget() {
     }
 
     let raf = 0
+    function frameObject(obj3d) {
+      const box = new THREE.Box3().setFromObject(obj3d)
+      const size = new THREE.Vector3()
+      const center = new THREE.Vector3()
+      box.getSize(size)
+      box.getCenter(center)
+
+      const maxDim = Math.max(size.x, size.y, size.z)
+      const fov = camera.fov * (Math.PI / 180)
+      let camZ = Math.abs((maxDim / 2) / Math.tan(fov / 2))
+      camZ *= 1.3
+
+      camera.position.set(center.x, center.y + maxDim * 0.25, camZ)
+      camera.near = maxDim / 100
+      camera.far = maxDim * 100
+      camera.updateProjectionMatrix()
+      camera.lookAt(center)
+    }
+
+    let framed = false
     function tick() {
-      company.rotation.y += 0.0045
+      if (!framed && model) {
+        framed = true
+        frameObject(company)
+      }
+      company.rotation.y += 0.004
       renderer.render(scene, camera)
       raf = requestAnimationFrame(tick)
     }
