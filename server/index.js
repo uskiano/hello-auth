@@ -2,6 +2,7 @@ const express = require('express')
 const cookieParser = require('cookie-parser')
 const bcrypt = require('bcrypt')
 const path = require('path')
+const { execSync } = require('child_process')
 
 const app = express()
 app.use(express.json())
@@ -18,7 +19,6 @@ const USER = {
 }
 
 function setAuthCookie(res, username) {
-  // For MVP: unsigned cookie. In real apps: signed + server-side session store.
   res.cookie('user', username, {
     httpOnly: true,
     sameSite: 'lax',
@@ -45,7 +45,6 @@ app.post('/api/login', async (req, res) => {
 // Support both POST (from SPA) and GET (if user visits the URL directly)
 app.all('/api/logout', (req, res) => {
   res.clearCookie('user')
-  // If it's a browser navigation, redirect back to the app
   const acceptsHtml = (req.headers.accept || '').includes('text/html')
   if (req.method === 'GET' && acceptsHtml) return res.redirect('/')
   res.json({ ok: true })
@@ -55,6 +54,20 @@ app.all('/api/logout', (req, res) => {
 app.get('/logout', (req, res) => {
   res.clearCookie('user')
   res.redirect('/')
+})
+
+// Add a visible build marker (commit hash)
+let buildId = process.env.RENDER_GIT_COMMIT || process.env.SOURCE_VERSION || ''
+if (!buildId) {
+  try {
+    buildId = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {}
+}
+
+app.get('/api/build', (req, res) => {
+  res.json({ build: buildId || 'unknown' })
 })
 
 // Serve React build
@@ -68,4 +81,5 @@ app.get(/.*/, (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`)
+  if (buildId) console.log(`Build: ${buildId}`)
 })

@@ -16,6 +16,7 @@ async function api(path, opts) {
 
 export default function App() {
   const [me, setMe] = useState(null)
+  const [build, setBuild] = useState('')
   const [username, setUsername] = useState('juan')
   const [password, setPassword] = useState('secret123')
   const [err, setErr] = useState('')
@@ -30,8 +31,18 @@ export default function App() {
     }
   }
 
+  async function refreshBuild() {
+    try {
+      const data = await api('/api/build')
+      setBuild(data.build || '')
+    } catch (e) {
+      setBuild('')
+    }
+  }
+
   useEffect(() => {
     refresh()
+    refreshBuild()
   }, [])
 
   async function login(e) {
@@ -79,6 +90,10 @@ export default function App() {
 
       <p style={{ marginTop: 24, color: '#666' }}>
         Demo creds: juan / secret123
+      </p>
+
+      <p style={{ marginTop: 12, color: '#666' }}>
+        Build: {build || '…'}
       </p>
     </div>
   )
