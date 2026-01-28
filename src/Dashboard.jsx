@@ -14,32 +14,97 @@ async function api(path, opts) {
   return res.text()
 }
 
-export default function Dashboard({ build }) {
-  const [users, setUsers] = useState([])
-  const [err, setErr] = useState('')
+function Widget({ title, children }) {
+  return (
+    <div style={{ border: '1px solid #e8e8e8', borderRadius: 12, padding: 16, background: '#fff' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <h2 style={{ margin: 0, fontSize: 16 }}>{title}</h2>
+      </div>
+      <div style={{ marginTop: 12 }}>{children}</div>
+    </div>
+  )
+}
 
+export default function Dashboard({ build }) {
+  // Users widget
+  const [users, setUsers] = useState([])
+  const [usersErr, setUsersErr] = useState('')
   const [name, setName] = useState('')
   const [role, setRole] = useState('user')
-
   const [editing, setEditing] = useState(null) // {id, name, role}
 
-  async function load() {
-    setErr('')
+  // News widget
+  const [news, setNews] = useState([])
+  const [newsErr, setNewsErr] = useState('')
+
+  // Weather widget
+  const [weather, setWeather] = useState(null)
+  const [place, setPlace] = useState('')
+  const [weatherErr, setWeatherErr] = useState('')
+
+  // Brainstorm widget (static for now)
+  const ideas = [
+    { title: 'AI Ops for SMBs', desc: 'A lightweight “virtual ops manager” that monitors invoices, cashflow, and deadlines, and nags you before things break.' },
+    { title: 'Local Services Marketplace (WhatsApp-first)', desc: 'Book trusted local tradies/services with transparent pricing, all managed via chat and one tap payments.' },
+    { title: 'Micro-learning for Professionals', desc: 'Daily 5-min lessons with quizzes for a niche (e.g., sales objections, leadership, or cloud certs) + streaks.' },
+    { title: 'Personal Knowledge Concierge', desc: 'Drop links/notes, get weekly summaries + action items, with smart reminders and “what should I do next?” prompts.' },
+  ]
+
+  async function loadUsers() {
+    setUsersErr('')
     try {
       const data = await api('/api/users')
       setUsers(data.users || [])
     } catch (e) {
-      setErr(e.message)
+      setUsersErr(e.message)
     }
   }
 
+  async function loadNews() {
+    setNewsErr('')
+    try {
+      const data = await api('/api/news')
+      setNews(data.items || [])
+    } catch (e) {
+      setNewsErr(e.message)
+    }
+  }
+
+  async function loadWeather() {
+    setWeatherErr('')
+
+    if (!navigator.geolocation) {
+      setWeatherErr('Geolocation not supported')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords
+        try {
+          const w = await api(`/api/weather?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`)
+          setWeather(w)
+          setPlace(w.place || '')
+        } catch (e) {
+          setWeatherErr(e.message)
+        }
+      },
+      (err) => {
+        setWeatherErr(err.message || 'Location denied')
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    )
+  }
+
   useEffect(() => {
-    load()
+    loadUsers()
+    loadNews()
+    loadWeather()
   }, [])
 
   async function createUser(e) {
     e.preventDefault()
-    setErr('')
+    setUsersErr('')
     try {
       await api('/api/users', {
         method: 'POST',
@@ -47,88 +112,148 @@ export default function Dashboard({ build }) {
       })
       setName('')
       setRole('user')
-      await load()
+      await loadUsers()
     } catch (e) {
-      setErr(e.message)
+      setUsersErr(e.message)
     }
-  }
-
-  async function startEdit(u) {
-    setEditing({ ...u })
   }
 
   async function saveEdit(e) {
     e.preventDefault()
-    setErr('')
+    setUsersErr('')
     try {
       await api(`/api/users/${editing.id}`, {
         method: 'PUT',
         body: JSON.stringify({ name: editing.name, role: editing.role }),
       })
       setEditing(null)
-      await load()
+      await loadUsers()
     } catch (e) {
-      setErr(e.message)
+      setUsersErr(e.message)
     }
   }
 
   async function delUser(id) {
     if (!confirm('Delete user?')) return
-    setErr('')
+    setUsersErr('')
     try {
       await api(`/api/users/${id}`, { method: 'DELETE' })
-      await load()
+      await loadUsers()
     } catch (e) {
-      setErr(e.message)
+      setUsersErr(e.message)
     }
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui', padding: 24, maxWidth: 720 }}>
-      <h1>Dashboard</h1>
-      <p style={{ color: '#666' }}>Build: {build || '…'}</p>
-
-      <h2>Users</h2>
-      <div style={{ display: 'grid', gap: 8 }}>
-        {users.map((u) => (
-          <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 160px', gap: 8, alignItems: 'center' }}>
-            <div>#{u.id}</div>
-            <div>{u.name}</div>
-            <div>{u.role}</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => startEdit(u)}>Edit</button>
-              <button onClick={() => delUser(u.id)}>Delete</button>
-            </div>
-          </div>
-        ))}
+    <div style={{ fontFamily: 'system-ui', padding: 20, background: '#fafafa', minHeight: 'calc(100vh - 50px)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+        <h1 style={{ margin: 0 }}>Dashboard</h1>
+        <div style={{ color: '#666' }}>Build: {build || '…'}</div>
       </div>
 
-      <h3 style={{ marginTop: 24 }}>Create user</h3>
-      <form onSubmit={createUser} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="name" required />
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="admin">admin</option>
-          <option value="user">user</option>
-        </select>
-        <button type="submit">Create</button>
-      </form>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 14,
+          alignItems: 'start',
+        }}
+      >
+        <Widget title="Users">
+          <div style={{ display: 'grid', gap: 8 }}>
+            {users.map((u) => (
+              <div
+                key={u.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '60px 1fr 90px 150px',
+                  gap: 8,
+                  alignItems: 'center',
+                  padding: '6px 0',
+                  borderBottom: '1px solid #f2f2f2',
+                }}
+              >
+                <div style={{ color: '#666' }}>#{u.id}</div>
+                <div>{u.name}</div>
+                <div style={{ color: '#333' }}>{u.role}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setEditing({ ...u })}>Edit</button>
+                  <button onClick={() => delUser(u.id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      {editing ? (
-        <>
-          <h3 style={{ marginTop: 24 }}>Edit user #{editing.id}</h3>
-          <form onSubmit={saveEdit} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="name" required />
-            <select value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
+          <form onSubmit={createUser} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="name" required />
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="admin">admin</option>
               <option value="user">user</option>
             </select>
-            <button type="submit">Save</button>
-            <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+            <button type="submit">Create</button>
           </form>
-        </>
-      ) : null}
 
-      {err ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 16 }}>{err}</pre> : null}
+          {editing ? (
+            <form onSubmit={saveEdit} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+              <strong>Edit #{editing.id}</strong>
+              <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="name" required />
+              <select value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
+                <option value="admin">admin</option>
+                <option value="user">user</option>
+              </select>
+              <button type="submit">Save</button>
+              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+            </form>
+          ) : null}
+
+          {usersErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{usersErr}</pre> : null}
+        </Widget>
+
+        <Widget title="News feeds">
+          <div style={{ display: 'grid', gap: 10 }}>
+            {news.slice(0, 6).map((n) => (
+              <a key={n.link} href={n.link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: '#111' }}>
+                <div style={{ fontWeight: 600 }}>{n.title}</div>
+                <div style={{ color: '#666', fontSize: 12 }}>{n.source || ''}</div>
+              </a>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+            <button onClick={loadNews}>Refresh</button>
+          </div>
+          {newsErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{newsErr}</pre> : null}
+        </Widget>
+
+        <Widget title="Weather">
+          <div style={{ display: 'grid', gap: 6 }}>
+            <div style={{ fontWeight: 600 }}>{place || 'Your location'}</div>
+            {weather ? (
+              <>
+                <div>Temp: {weather.tempC}°C</div>
+                <div>Wind: {weather.windKph} km/h</div>
+                <div style={{ color: '#666', fontSize: 12 }}>Updated: {weather.time}</div>
+              </>
+            ) : (
+              <div style={{ color: '#666' }}>Loading…</div>
+            )}
+            <div style={{ marginTop: 10 }}>
+              <button onClick={loadWeather}>Refresh</button>
+            </div>
+          </div>
+          {weatherErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{weatherErr}</pre> : null}
+        </Widget>
+
+        <Widget title="Brainstorm">
+          <div style={{ display: 'grid', gap: 12 }}>
+            {ideas.map((i) => (
+              <div key={i.title}>
+                <div style={{ fontWeight: 700 }}>{i.title}</div>
+                <div style={{ color: '#444' }}>{i.desc}</div>
+              </div>
+            ))}
+          </div>
+        </Widget>
+      </div>
     </div>
   )
 }

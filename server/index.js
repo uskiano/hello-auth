@@ -5,6 +5,8 @@ const path = require('path')
 const { execSync } = require('child_process')
 const { migrate, all, get, run, dbPath } = require('./db')
 
+// Built-in fetch in Node 18+ (Render uses modern Node)
+
 const app = express()
 app.use(express.json())
 app.use(cookieParser())
@@ -82,6 +84,53 @@ function requireAuth(req, res, next) {
 app.get('/api/users', requireAuth, async (req, res) => {
   const users = await all('SELECT id, name, role FROM users ORDER BY id ASC')
   res.json({ users })
+})
+
+// News: simple RSS proxy (BBC World)
+app.get('/api/news', requireAuth, async (req, res) => {
+  const url = 'https://feeds.bbci.co.uk/news/world/rss.xml'
+  const r = await fetch(url, { headers: { 'user-agent': 'hello-auth/1.0' } })
+  if (!r.ok) return res.status(502).send('news fetch failed')
+  const xml = await r.text()
+
+  // Minimal RSS parsing (good enough for MVP)
+  const items = []
+  const blocks = xml.split('<item>').slice(1)
+  for (const b of blocks.slice(0, 10)) {
+    const title = (b.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || b.match(/<title>(.*?)<\/title>/))?.[1]
+    const link = (b.match(/<link>(.*?)<\/link>/) || [])[1]
+    if (title && link) items.push({ title: title.trim(), link: link.trim(), source: 'BBC World' })
+  }
+
+  res.json({ items })
+})
+
+// Weather: Open-Meteo + reverse geocode (Nominatim)
+app.get('/api/weather', requireAuth, async (req, res) => {
+  const lat = Number(req.query.lat)
+  const lon = Number(req.query.lon)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return res.status(400).send('lat/lon required')
+
+  const wUrl = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current=temperature_2m,wind_speed_10m&timezone=auto`
+  const wr = await fetch(wUrl)
+  if (!wr.ok) return res.status(502).send('weather fetch failed')
+  const wj = await wr.json()
+
+  let place = ''
+  try {
+    const gUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`
+    const gr = await fetch(gUrl, { headers: { 'user-agent': 'hello-auth/1.0 (Render demo)' } })
+    if (gr.ok) {
+      const gj = await gr.json()
+      place = gj?.address?.city || gj?.address?.town || gj?.address?.suburb || gj?.address?.state || gj?.display_name || ''
+    }
+  } catch {}
+
+  const tempC = wj?.current?.temperature_2m
+  const windKph = wj?.current?.wind_speed_10m
+  const time = wj?.current?.time
+
+  res.json({ place, tempC, windKph, time, lat, lon })
 })
 
 app.post('/api/users', requireAuth, async (req, res) => {
