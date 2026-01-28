@@ -147,12 +147,7 @@ export default function Dashboard({ build }) {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '18px 16px 28px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-        <h1 style={{ margin: 0, fontSize: 22 }}>Dashboard</h1>
-        <div className="muted" style={{ fontSize: 12 }}>Build: {build || '…'}</div>
-      </div>
-
+    <div style={{ padding: '0 16px 28px' }}>
       <div
         style={{
           display: 'grid',
