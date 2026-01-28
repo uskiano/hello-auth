@@ -42,9 +42,19 @@ app.post('/api/login', async (req, res) => {
   res.json({ ok: true })
 })
 
-app.post('/api/logout', (req, res) => {
+// Support both POST (from SPA) and GET (if user visits the URL directly)
+app.all('/api/logout', (req, res) => {
   res.clearCookie('user')
+  // If it's a browser navigation, redirect back to the app
+  const acceptsHtml = (req.headers.accept || '').includes('text/html')
+  if (req.method === 'GET' && acceptsHtml) return res.redirect('/')
   res.json({ ok: true })
+})
+
+// Convenience route
+app.get('/logout', (req, res) => {
+  res.clearCookie('user')
+  res.redirect('/')
 })
 
 // Serve React build
