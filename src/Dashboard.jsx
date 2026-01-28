@@ -227,8 +227,8 @@ export default function Dashboard({ build }) {
         </Widget>
 
         <Widget title="Weather">
-          <div style={{ display: 'grid', gap: 6 }}>
-            <div style={{ fontWeight: 600 }}>{place || 'Your location'}</div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ fontWeight: 650 }}>{place || 'Your location'}</div>
             {weather ? (
               <>
                 <div>Temp: {weather.tempC}°C</div>

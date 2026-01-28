@@ -1,15 +1,14 @@
 :root{
-  --bg0:#0b0f1a;
-  --bg1:#0f1626;
-  --card:#121a2b;
-  --card2:#10182a;
-  --border:rgba(255,255,255,.08);
+  /* Wrapmarket template-ish */
+  --bg0:#0b0f18;
+  --bg1:#0f1421;
+  --card:#1a2030;
+  --cardInner:#232a3d;
+  --border:rgba(255,255,255,.06);
   --muted:rgba(255,255,255,.65);
   --text:rgba(255,255,255,.92);
-  --accent:#ff4d4d;
-  --accent2:#3b82f6;
-  --shadow: 0 12px 30px rgba(0,0,0,.45);
-  --radius:14px;
+  --shadow: 0 10px 22px rgba(0,0,0,.45);
+  --radius:16px;
 }
 
 *{ box-sizing:border-box; }
@@ -19,10 +18,10 @@ body{
   margin:0;
   color:var(--text);
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(59,130,246,.20), transparent 55%),
-    radial-gradient(900px 500px at 85% 0%, rgba(255,77,77,.14), transparent 55%),
+    radial-gradient(1100px 700px at 30% 10%, rgba(98,126,255,.18), transparent 55%),
+    radial-gradient(900px 600px at 75% 15%, rgba(255,92,92,.12), transparent 60%),
     linear-gradient(180deg, var(--bg0), var(--bg1));
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
 }
 
 a{ color:rgba(255,255,255,.88); }
@@ -49,10 +48,26 @@ button,input,select{
 }
 
 .card{
-  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
   border:1px solid var(--border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
+}
+
+.cardInner{
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border:1px solid var(--border);
+  border-radius:14px;
+}
+
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:14px;
+  background:rgba(98,126,255,.12);
+  border:1px solid rgba(98,126,255,.18);
 }
 
 .cardHeader{
