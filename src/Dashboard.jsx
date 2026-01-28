@@ -161,24 +161,28 @@ export default function Dashboard({ build }) {
           alignItems: 'start',
         }}
       >
-        <Widget title="Users">
-          <div style={{ display: 'grid', gap: 8 }}>
+        <Widget
+          title="Users"
+          right={
+            <div className="pill blue">
+              <span className="kpiNum" style={{ fontSize: 14 }}>{users.length}</span>
+              <span className="muted">total</span>
+            </div>
+          }
+        >
+          <div style={{ display: 'grid', gap: 10 }}>
             {users.map((u) => (
-              <div
-                key={u.id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '60px 1fr 90px 150px',
-                  gap: 8,
-                  alignItems: 'center',
-                  padding: '6px 0',
-                  borderBottom: '1px solid #f2f2f2',
-                }}
-              >
-                <div className="muted">#{u.id}</div>
-                <div>{u.name}</div>
-                <div className="muted">{u.role}</div>
-                <div style={{ display: 'flex', gap: 8 }}>
+              <div key={u.id} className="row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className={`dot ${u.role === 'admin' ? 'green' : 'blue'}`} />
+                  <div>
+                    <div style={{ fontWeight: 700, lineHeight: 1.1 }}>{u.name}</div>
+                    <div className="muted" style={{ fontSize: 12 }}>#{u.id}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className={`pill ${u.role === 'admin' ? 'green' : 'blue'}`}>{u.role}</span>
                   <button className="btn" onClick={() => setEditing({ ...u })}>Edit</button>
                   <button className="btn" onClick={() => delUser(u.id)}>Delete</button>
                 </div>
@@ -186,26 +190,31 @@ export default function Dashboard({ build }) {
             ))}
           </div>
 
-          <form onSubmit={createUser} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+          <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="name" required />
             <select className="input" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="admin">admin</option>
               <option value="user">user</option>
             </select>
-            <button className="btn" type="submit">Create</button>
-          </form>
+            <button className="btn" onClick={createUser}>Create</button>
+          </div>
 
           {editing ? (
-            <form onSubmit={saveEdit} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
-              <strong> Edit #{editing.id}</strong>
-              <input className="input" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="name" required />
-              <select className="input" value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
-                <option value="admin">admin</option>
-                <option value="user">user</option>
-              </select>
-              <button className="btn" type="submit">Save</button>
-              <button className="btn" type="button" onClick={() => setEditing(null)}>Cancel</button>
-            </form>
+            <div style={{ marginTop: 14 }} className="row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="dot purple" />
+                <strong>Edit #{editing.id}</strong>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <input className="input" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="name" required />
+                <select className="input" value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
+                  <option value="admin">admin</option>
+                  <option value="user">user</option>
+                </select>
+                <button className="btn" onClick={saveEdit}>Save</button>
+                <button className="btn" onClick={() => setEditing(null)}>Cancel</button>
+              </div>
+            </div>
           ) : null}
 
           {usersErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{usersErr}</pre> : null}
