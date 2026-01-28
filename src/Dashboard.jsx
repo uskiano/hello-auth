@@ -15,13 +15,14 @@ async function api(path, opts) {
   return res.text()
 }
 
-function Widget({ title, children }) {
+function Widget({ title, right, children }) {
   return (
-    <div style={{ border: '1px solid #e8e8e8', borderRadius: 12, padding: 16, background: '#fff' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>{title}</h2>
+    <div className="card">
+      <div className="cardHeader">
+        <h2 className="cardTitle">{title}</h2>
+        {right}
       </div>
-      <div style={{ marginTop: 12 }}>{children}</div>
+      <div className="cardBody">{children}</div>
     </div>
   )
 }
@@ -146,17 +147,17 @@ export default function Dashboard({ build }) {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui', padding: 20, background: '#fafafa', minHeight: 'calc(100vh - 50px)' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '18px 16px 28px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-        <h1 style={{ margin: 0 }}>Dashboard</h1>
-        <div style={{ color: '#666' }}>Build: {build || '…'}</div>
+        <h1 style={{ margin: 0, fontSize: 22 }}>Dashboard</h1>
+        <div className="muted" style={{ fontSize: 12 }}>Build: {build || '…'}</div>
       </div>
 
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 14,
+          gap: 16,
           alignItems: 'start',
         }}
       >
@@ -174,36 +175,36 @@ export default function Dashboard({ build }) {
                   borderBottom: '1px solid #f2f2f2',
                 }}
               >
-                <div style={{ color: '#666' }}>#{u.id}</div>
+                <div className="muted">#{u.id}</div>
                 <div>{u.name}</div>
-                <div style={{ color: '#333' }}>{u.role}</div>
+                <div className="muted">{u.role}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setEditing({ ...u })}>Edit</button>
-                  <button onClick={() => delUser(u.id)}>Delete</button>
+                  <button className="btn" onClick={() => setEditing({ ...u })}>Edit</button>
+                  <button className="btn" onClick={() => delUser(u.id)}>Delete</button>
                 </div>
               </div>
             ))}
           </div>
 
           <form onSubmit={createUser} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="name" required />
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="name" required />
+            <select className="input" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="admin">admin</option>
               <option value="user">user</option>
             </select>
-            <button type="submit">Create</button>
+            <button className="btn" type="submit">Create</button>
           </form>
 
           {editing ? (
             <form onSubmit={saveEdit} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
-              <strong>Edit #{editing.id}</strong>
-              <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="name" required />
-              <select value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
+              <strong> Edit #{editing.id}</strong>
+              <input className="input" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="name" required />
+              <select className="input" value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
                 <option value="admin">admin</option>
                 <option value="user">user</option>
               </select>
-              <button type="submit">Save</button>
-              <button type="button" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="btn" type="submit">Save</button>
+              <button className="btn" type="button" onClick={() => setEditing(null)}>Cancel</button>
             </form>
           ) : null}
 
@@ -213,14 +214,14 @@ export default function Dashboard({ build }) {
         <Widget title="News feeds">
           <div style={{ display: 'grid', gap: 10 }}>
             {news.slice(0, 6).map((n) => (
-              <a key={n.link} href={n.link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: '#111' }}>
-                <div style={{ fontWeight: 600 }}>{n.title}</div>
-                <div style={{ color: '#666', fontSize: 12 }}>{n.source || ''}</div>
+              <a key={n.link} href={n.link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ fontWeight: 650, lineHeight: 1.25 }}>{n.title}</div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{n.source || ''}</div>
               </a>
             ))}
           </div>
           <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-            <button onClick={loadNews}>Refresh</button>
+            <button className="btn" onClick={loadNews}>Refresh</button>
           </div>
           {newsErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{newsErr}</pre> : null}
         </Widget>
@@ -238,7 +239,7 @@ export default function Dashboard({ build }) {
               <div style={{ color: '#666' }}>Loading…</div>
             )}
             <div style={{ marginTop: 10 }}>
-              <button onClick={loadWeather}>Refresh</button>
+              <button className="btn" onClick={loadWeather}>Refresh</button>
             </div>
           </div>
           {weatherErr ? <pre style={{ color: 'crimson', whiteSpace: 'pre-wrap', marginTop: 10 }}>{weatherErr}</pre> : null}

@@ -55,11 +55,25 @@ function AppInner() {
 
   return (
     <div>
-      <div style={{ padding: 12, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ fontFamily: 'system-ui' }}>{authed ? `Logged in: ${me.user}` : 'Not logged in'}</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {authed ? <button onClick={logout}>Log out</button> : null}
-          <a href="/dashboard">Dashboard</a>
+      <div className="topbar">
+        <div className="topbarInner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.10)', display: 'grid', placeItems: 'center' }}>
+              <span style={{ fontWeight: 800, fontSize: 12 }}>J</span>
+            </div>
+            <div style={{ fontWeight: 700 }}>Juan</div>
+            <span className="badge">{authed ? `Logged: ${me.user}` : 'Logged out'}</span>
+          </div>
+
+          <div className="search">
+            <span className="muted" style={{ fontSize: 12 }}>Search…</span>
+            <input aria-label="search" placeholder="" />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {authed ? <button className="btn" onClick={logout}>Log out</button> : null}
+            <a className="btn" href="/dashboard" style={{ textDecoration: 'none' }}>Dashboard</a>
+          </div>
         </div>
       </div>
 
