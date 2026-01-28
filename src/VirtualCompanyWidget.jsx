@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 export default function VirtualCompanyWidget() {
   const mountRef = useRef(null)
@@ -30,6 +31,15 @@ export default function VirtualCompanyWidget() {
     // IBL environment for more realistic daylight-ish reflections
     const pmrem = new THREE.PMREMGenerator(renderer)
     scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
+
+    // Controls (so you can navigate)
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = true
+    controls.dampingFactor = 0.06
+    controls.enablePan = true
+    controls.enableZoom = true
+    controls.target.set(0, 1.0, 0)
+    controls.update()
 
     // "Sun" light
     const sun = new THREE.DirectionalLight(0xffffff, 2.3)
@@ -182,8 +192,11 @@ export default function VirtualCompanyWidget() {
       if (!framed && model) {
         framed = true
         frameObject(company)
+        controls.target.set(0, 1.0, 0)
+        controls.update()
       }
       company.rotation.y += 0.004
+      controls.update()
       renderer.render(scene, camera)
       raf = requestAnimationFrame(tick)
     }
@@ -197,6 +210,7 @@ export default function VirtualCompanyWidget() {
       cancelAnimationFrame(raf)
       ro.disconnect()
       pmrem.dispose()
+      controls.dispose()
       renderer.dispose()
       spriteMat.dispose()
       logoTex.dispose()
